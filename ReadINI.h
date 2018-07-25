@@ -15,6 +15,7 @@ int GetIniKeyInt(char *title,char *key,char *filename);
 int GetIniKeyIntDef(char *title, char *key, char *filename, int def);
 //Get a Double Value From INI file with default value
 double GetIniKeyDoubleDef(char *title, char *key, char *filename, double def);
+const char *GetIniKeyStringDef(const char *title, const char *key, const char *filename, char* buffer, unsigned long bufferSize, const char* def);
 
 #ifdef __cplusplus
 }

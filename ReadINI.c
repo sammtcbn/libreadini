@@ -14,12 +14,14 @@
 #include <stdarg.h>
 #endif
 
+#include "ReadINI.h"
+
 char g_szConfigPath[MAX_PATH];
 
 //Get Current Path
 int GetCurrentPath(char buf[],char *pFileName)
 {
-	char * p;
+    char * p;
 #ifdef WIN32
     GetModuleFileName(NULL,buf,MAX_PATH);
 #else
@@ -33,6 +35,9 @@ int GetCurrentPath(char buf[],char *pFileName)
     bytes = read(fd, buf, 256);
     close(fd);
     buf[MAX_PATH] = '\0';
+    if (bytes == -1) { // error
+        return -1;
+    }
 
 #endif
     p = &buf[strlen(buf)];
@@ -48,7 +53,7 @@ int GetCurrentPath(char buf[],char *pFileName)
 
     p++;
 
-	memcpy(p,pFileName,strlen(pFileName));
+    memcpy(p,pFileName,strlen(pFileName));
     return 0;
 }
 
@@ -72,30 +77,30 @@ char *GetIniKeyString(char *title,char *key,char *filename)
     while(!feof(fp))
     {
         rtnval = fgetc(fp);
-		if (rtnval == '\r') {
-			continue;
-		}
+        if (rtnval == '\r') {
+            continue;
+        }
 
         if(rtnval == EOF || rtnval == '\n')
         {
             szLine[i] = '\0';
 
-			// find comment and skip
-			i = 0;
-			while (szLine[i] != '\0') {
-				if (szLine[i] == ';') {
-					szLine[i] = '\0';
-					break;
-				}
-				i++;
-			}
+            // find comment and skip
+            i = 0;
+            while (szLine[i] != '\0') {
+                if (szLine[i] == ';') {
+                    szLine[i] = '\0';
+                    break;
+                }
+                i++;
+            }
 
             i = 0;
             tmp = strchr(szLine, '=');
 
             if(( tmp != NULL )&&(flag == 1))
             {
-				szLine[tmp-szLine] = '\0';
+                szLine[tmp-szLine] = '\0';
                 if(strcmp(szLine,key)==0)
                 {
                     if ('#' == szLine[0])
@@ -124,7 +129,7 @@ char *GetIniKeyString(char *title,char *key,char *filename)
                 }
             }
         }
-		else
+        else
         {
             szLine[i++] = rtnval;
         }
@@ -136,33 +141,138 @@ char *GetIniKeyString(char *title,char *key,char *filename)
 //Get a Int Value From INI file
 int GetIniKeyInt(char *title,char *key,char *filename)
 {
-    return atoi(GetIniKeyString(title,key,filename));
+    char buffer[1024];
+    return strtol(GetIniKeyStringDef(title, key, filename, buffer, sizeof(buffer), "0"), NULL, 10);
 }
 
 int GetIniKeyIntDef(char *title, char *key, char *filename, int def)
 {
-	char *endptr = NULL;
-	char *str = GetIniKeyString(title,key,filename);
-	int ret;
+    char buffer[1024];
+    char *endptr = NULL;
+    const char *str = GetIniKeyStringDef(title, key, filename, buffer, sizeof(buffer), NULL);
+    int ret;
 
-	ret = strtol(str, &endptr, 10);
-	if (str == endptr) { // no digit
-		return def;
-	}
-	return ret;
+    if (str == NULL) { // not found
+        return def;
+    }
+
+    ret = strtol(str, &endptr, 10);
+    if (str == endptr) { // no digit
+        return def;
+    }
+    return ret;
 }
 
 
 double GetIniKeyDoubleDef(char *title, char *key, char *filename, double def)
 {
-	char *endptr = NULL;
-	char *str = GetIniKeyString(title,key,filename);
-	double ret;
+    char buffer[1024];
+    char *endptr = NULL;
+    const char *str = GetIniKeyStringDef(title, key, filename, buffer, sizeof(buffer), NULL);
+    double ret;
 
-	ret = strtod(str, &endptr);
-	if (str == endptr) { // no digit
-		return def;
-	}
-	return ret;
+    if (str == NULL) { // not found
+        return def;
+    }
+
+    ret = strtod(str, &endptr);
+    if (str == endptr) { // no digit
+        return def;
+    }
+    return ret;
 }
 
+
+/*
+    Get a String From INI file
+*/
+const char *GetIniKeyStringDef(const char *title,
+                         const char *key,
+                         const char *filename,
+                         char* buffer,
+                         unsigned long bufferSize,
+                         const char* def)
+{
+    FILE *fp;
+    char szLine[1024];
+    int rtnval;
+    int i = 0;
+    int flag = 0;
+    char *tmp;
+
+    if((fp = fopen(filename, "r")) == NULL)
+    {
+        fprintf(stderr, "have no such file \n");
+        return def;
+    }
+
+    while(!feof(fp))
+    {
+        rtnval = fgetc(fp);
+        if (rtnval == '\r') {
+            continue;
+        }
+
+        if(rtnval == EOF || rtnval == '\n')
+        {
+            szLine[i] = '\0';
+
+            // find comment and skip
+            i = 0;
+            while (szLine[i] != '\0') {
+                if (szLine[i] == ';') {
+                    szLine[i] = '\0';
+                    break;
+                }
+                i++;
+            }
+
+            i = 0;
+            tmp = strchr(szLine, '=');
+
+            if(( tmp != NULL )&&(flag == 1))
+            {
+                szLine[tmp-szLine] = '\0';
+                if(strcmp(szLine,key)==0)
+                {
+                    if ('#' == szLine[0])
+                    {
+                    }
+                    else if ( '/' == szLine[0] && '/' == szLine[1] )
+                    {
+                    }
+                    else
+                    {
+                        if (bufferSize < strlen(tmp+1) + 1) {
+                            fprintf(stderr, "buffer is not enough, bufferSize=%lu, require=%lu\n", bufferSize, strlen(tmp+1) + 1);
+                            return def;
+                        }
+                        strcpy(buffer, tmp+1);
+                        fclose(fp);
+                        return buffer;
+                    }
+                }
+            }
+            else
+            {
+                if (bufferSize < strlen(title) + 3) { // +3, "[]\n"
+                    fprintf(stderr, "buffer is not enough, bufferSize=%lu, require=%lu\n", bufferSize, strlen(title) + 3);
+                    return def;
+                }
+                strcpy(buffer,"[");
+                strcat(buffer, title);
+                strcat(buffer, "]");
+                if( strncmp(buffer, szLine, strlen(buffer)) == 0 )
+                {
+                    flag = 1;
+                }
+            }
+        }
+        else
+        {
+            szLine[i++] = rtnval;
+        }
+    }
+    fclose(fp);
+    return def;
+}
