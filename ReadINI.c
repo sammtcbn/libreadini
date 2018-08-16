@@ -19,6 +19,7 @@
 char g_szConfigPath[MAX_PATH];
 
 //Get Current Path
+/*
 int GetCurrentPath(char buf[],char *pFileName)
 {
     char * p;
@@ -56,9 +57,10 @@ int GetCurrentPath(char buf[],char *pFileName)
     memcpy(p,pFileName,strlen(pFileName));
     return 0;
 }
+*/
 
 //Get a String From INI file
-char *GetIniKeyString(char *title,char *key,char *filename)
+char *GetIniKeyString(const char *title, const char *key, const char *filename)
 {
     FILE *fp;
     char szLine[1024];
@@ -139,13 +141,13 @@ char *GetIniKeyString(char *title,char *key,char *filename)
 }
 
 //Get a Int Value From INI file
-int GetIniKeyInt(char *title,char *key,char *filename)
+int GetIniKeyInt(const char *title, const char *key, const char *filename)
 {
     char buffer[1024];
     return strtol(GetIniKeyStringDef(title, key, filename, buffer, sizeof(buffer), "0"), NULL, 10);
 }
 
-int GetIniKeyIntDef(char *title, char *key, char *filename, int def)
+int GetIniKeyIntDef(const char *title, const char *key, const char *filename, int def)
 {
     char buffer[1024];
     char *endptr = NULL;
@@ -164,7 +166,7 @@ int GetIniKeyIntDef(char *title, char *key, char *filename, int def)
 }
 
 
-double GetIniKeyDoubleDef(char *title, char *key, char *filename, double def)
+double GetIniKeyDoubleDef(const char *title, const char *key, const char *filename, double def)
 {
     char buffer[1024];
     char *endptr = NULL;
@@ -186,7 +188,7 @@ double GetIniKeyDoubleDef(char *title, char *key, char *filename, double def)
 /*
     Get a String From INI file
 */
-const char *GetIniKeyStringDef(const char *title,
+char *GetIniKeyStringDef(const char *title,
                          const char *key,
                          const char *filename,
                          char* buffer,
@@ -203,7 +205,12 @@ const char *GetIniKeyStringDef(const char *title,
     if((fp = fopen(filename, "r")) == NULL)
     {
         fprintf(stderr, "have no such file \n");
-        return def;
+		if (def) {
+			strncpy(buffer, def, bufferSize);
+			return buffer;
+		} else {
+			return NULL;
+		}
     }
 
     while(!feof(fp))
@@ -245,7 +252,12 @@ const char *GetIniKeyStringDef(const char *title,
                     {
                         if (bufferSize < strlen(tmp+1) + 1) {
                             fprintf(stderr, "buffer is not enough, bufferSize=%lu, require=%lu\n", bufferSize, strlen(tmp+1) + 1);
-                            return def;
+							if (def) {
+								strncpy(buffer, def, bufferSize);
+								return buffer;
+							} else {
+								return NULL;
+							}
                         }
                         strcpy(buffer, tmp+1);
                         fclose(fp);
@@ -257,7 +269,12 @@ const char *GetIniKeyStringDef(const char *title,
             {
                 if (bufferSize < strlen(title) + 3) { // +3, "[]\n"
                     fprintf(stderr, "buffer is not enough, bufferSize=%lu, require=%lu\n", bufferSize, strlen(title) + 3);
-                    return def;
+					if (def) {
+						strncpy(buffer, def, bufferSize);
+						return buffer;
+					} else {
+						return NULL;
+					}
                 }
                 strcpy(buffer,"[");
                 strcat(buffer, title);
@@ -274,5 +291,11 @@ const char *GetIniKeyStringDef(const char *title,
         }
     }
     fclose(fp);
-    return def;
+	if (def) {
+		strncpy(buffer, def, bufferSize);
+		return buffer;
+	} else {
+		return NULL;
+	}
+    return buffer;
 }

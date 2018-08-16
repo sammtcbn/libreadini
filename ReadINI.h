@@ -6,16 +6,16 @@ extern "C" {
 #endif
 
 //Get Current Path
-int GetCurrentPath(char buf[],char *pFileName);
+//int GetCurrentPath(char buf[],char *pFileName);
 //Get a String From INI file
-char *GetIniKeyString(char *title,char *key,char *filename);
+char *GetIniKeyString(const char *title, const char *key, const char *filename);
 //Get a Int Value From INI file
-int GetIniKeyInt(char *title,char *key,char *filename);
+int GetIniKeyInt(const char *title, const char *key, const char *filename);
 //Get a Int Value From INI file with default value
-int GetIniKeyIntDef(char *title, char *key, char *filename, int def);
+int GetIniKeyIntDef(const char *title, const char *key, const char *filename, int def);
 //Get a Double Value From INI file with default value
-double GetIniKeyDoubleDef(char *title, char *key, char *filename, double def);
-const char *GetIniKeyStringDef(const char *title, const char *key, const char *filename, char* buffer, unsigned long bufferSize, const char* def);
+double GetIniKeyDoubleDef(const char *title, const char *key, const char *filename, double def);
+char *GetIniKeyStringDef(const char *title, const char *key, const char *filename, char* buffer, unsigned long bufferSize, const char* def);
 
 #ifdef __cplusplus
 }
