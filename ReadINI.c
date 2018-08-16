@@ -197,6 +197,7 @@ char *GetIniKeyStringDef(const char *title,
 {
     FILE *fp;
     char szLine[1024];
+    char title_buffer[512];
     int rtnval;
     int i = 0;
     int flag = 0;
@@ -205,12 +206,13 @@ char *GetIniKeyStringDef(const char *title,
     if((fp = fopen(filename, "r")) == NULL)
     {
         fprintf(stderr, "have no such file \n");
-		if (def) {
-			strncpy(buffer, def, bufferSize);
-			return buffer;
-		} else {
-			return NULL;
-		}
+        if (def) {
+            strncpy(buffer, def, bufferSize-1);
+            buffer[bufferSize-1] = '\0';
+            return buffer;
+        } else {
+            return NULL;
+        }
     }
 
     while(!feof(fp))
@@ -252,12 +254,13 @@ char *GetIniKeyStringDef(const char *title,
                     {
                         if (bufferSize < strlen(tmp+1) + 1) {
                             fprintf(stderr, "buffer is not enough, bufferSize=%lu, require=%lu\n", bufferSize, strlen(tmp+1) + 1);
-							if (def) {
-								strncpy(buffer, def, bufferSize);
-								return buffer;
-							} else {
-								return NULL;
-							}
+                            if (def) {
+                                strncpy(buffer, def, bufferSize-1);
+                                buffer[bufferSize-1] = '\0';
+                                return buffer;
+                            } else {
+                                return NULL;
+                            }
                         }
                         strcpy(buffer, tmp+1);
                         fclose(fp);
@@ -267,19 +270,20 @@ char *GetIniKeyStringDef(const char *title,
             }
             else
             {
-                if (bufferSize < strlen(title) + 3) { // +3, "[]\n"
-                    fprintf(stderr, "buffer is not enough, bufferSize=%lu, require=%lu\n", bufferSize, strlen(title) + 3);
-					if (def) {
-						strncpy(buffer, def, bufferSize);
-						return buffer;
-					} else {
-						return NULL;
-					}
+                if (sizeof(title_buffer) < strlen(title) + 3) { // +3, "[]\n"
+                    fprintf(stderr, "buffer is not enough, bufferSize=%lu, require=%lu\n", sizeof(title_buffer), strlen(title) + 3);
+                    if (def) {
+                        strncpy(buffer, def, bufferSize-1);
+                        buffer[bufferSize-1] = '\0';
+                        return buffer;
+                    } else {
+                        return NULL;
+                    }
                 }
-                strcpy(buffer,"[");
-                strcat(buffer, title);
-                strcat(buffer, "]");
-                if( strncmp(buffer, szLine, strlen(buffer)) == 0 )
+                strcpy(title_buffer,"[");
+                strcat(title_buffer, title);
+                strcat(title_buffer, "]");
+                if( strncmp(title_buffer, szLine, strlen(title_buffer)) == 0 )
                 {
                     flag = 1;
                 }
@@ -291,11 +295,12 @@ char *GetIniKeyStringDef(const char *title,
         }
     }
     fclose(fp);
-	if (def) {
-		strncpy(buffer, def, bufferSize);
-		return buffer;
-	} else {
-		return NULL;
-	}
+    if (def) {
+        strncpy(buffer, def, bufferSize-1);
+        buffer[bufferSize-1] = '\0';
+        return buffer;
+    } else {
+        return NULL;
+    }
     return buffer;
 }
